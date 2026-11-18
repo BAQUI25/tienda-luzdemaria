@@ -25,6 +25,7 @@ export default async (req) => {
       id: String(p.id),
       code: String(p.code || ''),
       name: String(p.name || '').slice(0, 120),
+      brand: String(p.brand || '').slice(0, 40),
       category: String(p.category || 'Otros').slice(0, 60),
       unit: p.unit === 'kg' ? 'kg' : 'unidad',
       price: Math.max(0, Number(p.price) || 0),
