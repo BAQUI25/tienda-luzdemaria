@@ -1,10 +1,10 @@
 // GET /api/pedidos — lista de pedidos para la app de inventario (requiere clave de administrador)
-import { json, preflight, isAdmin, db } from '../lib/util.mjs';
+import { json, preflight, isAdmin, unauthorized, db } from '../lib/util.mjs';
 
 export default async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
-  if (!isAdmin(req)) return json({ error: 'Clave de administrador incorrecta' }, 401);
+  if (!isAdmin(req)) return unauthorized(req);
 
   const { blobs } = await db().list({ prefix: 'pedidos/' });
   // Los IDs llevan la fecha codificada: ordenar por clave = ordenar por fecha

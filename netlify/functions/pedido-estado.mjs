@@ -1,5 +1,5 @@
 // POST /api/pedido-estado — la app de inventario marca un pedido (registrado, entregado, cancelado)
-import { json, preflight, isAdmin, getOrder, saveOrder } from '../lib/util.mjs';
+import { json, preflight, isAdmin, unauthorized, getOrder, saveOrder } from '../lib/util.mjs';
 
 const ALLOWED = ['pagado', 'preparando', 'entregado', 'cancelado'];
 
@@ -7,7 +7,7 @@ export default async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   if (req.method !== 'POST') return json({ error: 'Método no permitido' }, 405);
-  if (!isAdmin(req)) return json({ error: 'Clave de administrador incorrecta' }, 401);
+  if (!isAdmin(req)) return unauthorized(req);
 
   let body;
   try { body = await req.json(); } catch { return json({ error: 'Datos no válidos' }, 400); }

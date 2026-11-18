@@ -1,11 +1,11 @@
 // POST /api/publicar — la app de inventario sube el catálogo (requiere clave de administrador)
-import { json, preflight, isAdmin, db } from '../lib/util.mjs';
+import { json, preflight, isAdmin, unauthorized, db } from '../lib/util.mjs';
 
 export default async (req) => {
   const pre = preflight(req);
   if (pre) return pre;
   if (req.method !== 'POST') return json({ error: 'Método no permitido' }, 405);
-  if (!isAdmin(req)) return json({ error: 'Clave de administrador incorrecta' }, 401);
+  if (!isAdmin(req)) return unauthorized(req);
 
   let cat;
   try { cat = await req.json(); } catch { return json({ error: 'Datos no válidos' }, 400); }
