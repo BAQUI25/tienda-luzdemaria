@@ -1,0 +1,10 @@
+{
+  "name": "tienda-luz-de-maria",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Supermercado virtual 3D del minimercado Luz de María, con pagos por Mercado Pago",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
