@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Minimercado Luz de María</title>
+  <meta name="description" content="Recorra nuestro minimercado en 3D y compre en línea.">
+  <meta name="theme-color" content="#2f8f46">
+  <link rel="icon" href="icono.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="tienda.css">
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <!-- Barra superior -->
+  <header class="hud-top">
+    <div class="logo"><span>🧺</span> <b id="storeName">Minimercado</b></div>
+    <div class="search">
+      <input id="search" type="search" placeholder="🔎 ¿Qué busca?" autocomplete="off">
+      <ul id="searchResults" class="results hidden"></ul>
+    </div>
+    <button id="btnAisles" class="pill">🧭 Pasillos</button>
+    <button id="btnList" class="pill" title="Ver como lista">☰</button>
+    <button id="btnCart" class="cart">🛒 <b id="cartCount">0</b></button>
+  </header>
+
+  <div id="demoBanner" class="demo hidden">Tienda en modo demostración — los pagos se activan cuando el local publique su catálogo.</div>
+
+  <!-- Menú de pasillos -->
+  <nav id="aisleMenu" class="aisle-menu hidden"></nav>
+
+  <!-- Mapa -->
+  <canvas id="minimap" class="minimap" width="170" height="210" title="Toque el mapa para ir a ese lugar"></canvas>
+
+  <!-- Controles táctiles / botones de caminar -->
+  <div class="pad" id="pad">
+    <button data-move="fwd" aria-label="Avanzar">▲</button>
+    <div>
+      <button data-move="left" aria-label="Girar a la izquierda">⟲</button>
+      <button data-move="back" aria-label="Retroceder">▼</button>
+      <button data-move="right" aria-label="Girar a la derecha">⟳</button>
+    </div>
+  </div>
+
+  <div id="hint" class="hint hidden"></div>
+
+  <!-- Ficha de producto -->
+  <div id="productSheet" class="sheet hidden" role="dialog" aria-modal="true">
+    <button class="close" data-close>✕</button>
+    <div class="sheet-body">
+      <div id="psImage" class="ps-image"></div>
+      <div class="ps-info">
+        <div id="psCat" class="ps-cat"></div>
+        <h2 id="psName"></h2>
+        <div class="ps-price"><span id="psPrice"></span></div>
+        <div id="psStock" class="ps-stock"></div>
+        <div class="qty">
+          <button id="psMinus" aria-label="Menos">−</button>
+          <span id="psQty">1</span>
+          <button id="psPlus" aria-label="Más">+</button>
+        </div>
+        <button id="psAdd" class="btn-primary">Agregar al carrito</button>
+        <p id="psNote" class="muted small"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carrito y pago -->
+  <aside id="cartPanel" class="drawer hidden" aria-label="Carrito">
+    <div class="drawer-head">
+      <h2>🛒 Su carrito</h2>
+      <button class="close" data-close>✕</button>
+    </div>
+    <div id="cartItems" class="cart-items"></div>
+    <div class="cart-total">Total <b id="cartTotal">$ 0</b></div>
+    <form id="checkoutForm" class="checkout">
+      <h3>Datos para su pedido</h3>
+      <input name="nombre" placeholder="Nombre y apellido" required autocomplete="name">
+      <input name="telefono" placeholder="Teléfono / WhatsApp" required autocomplete="tel" inputmode="tel">
+      <input name="email" type="email" placeholder="Correo (para el comprobante)" autocomplete="email">
+      <div class="seg">
+        <label><input type="radio" name="entrega" value="retiro" checked> 🏪 Retiro en el local</label>
+        <label><input type="radio" name="entrega" value="despacho"> 🛵 Despacho</label>
+      </div>
+      <input name="direccion" placeholder="Dirección de despacho" autocomplete="street-address" class="hidden">
+      <textarea name="nota" rows="2" placeholder="Nota (opcional)"></textarea>
+      <p class="muted small">Los productos por kilo se pesan al preparar su pedido; el peso final puede variar levemente.</p>
+      <button type="submit" id="btnPay" class="btn-pay">Pagar con Mercado Pago</button>
+      <p id="payMsg" class="pay-msg"></p>
+    </form>
+  </aside>
+
+  <!-- Vista de lista (alternativa simple) -->
+  <section id="listView" class="list-view hidden" aria-label="Lista de productos">
+    <div class="drawer-head">
+      <h2>Todos los productos</h2>
+      <button class="close" data-close>✕</button>
+    </div>
+    <div id="listBody" class="list-body"></div>
+  </section>
+
+  <!-- Mensajes (resultado del pago, etc.) -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <div id="modalBody"></div>
+      <button class="btn-primary" data-close>Continuar</button>
+    </div>
+  </div>
+
+  <!-- Pantalla de carga -->
+  <div id="loading" class="loading">
+    <div class="awning"></div>
+    <div class="loading-box">
+      <div class="basket">🧺</div>
+      <h1 id="loadingName">Minimercado</h1>
+      <p id="loadingMsg">Ordenando las estanterías…</p>
+      <button id="btnEnter" class="btn-primary hidden">Entrar a la tienda</button>
+      <p class="muted small" id="controlsHelp">Arrastre para mirar · ▲▼ o flechas para caminar · Doble clic en el piso para ir allí · Toque un producto para verlo</p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script type="module" src="tienda3d.js"></script>
+</body>
+</html>
