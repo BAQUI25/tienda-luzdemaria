@@ -66,9 +66,21 @@ const CATEGORY_COLOR = {
   'pollo': '#f4a261', 'verduras y frutas': '#52b788', 'lacteos y huevos': '#74c0fc', 'bebidas': '#4dabf7',
   'aseo y limpieza': '#9775fa', 'otros': '#adb5bd'
 };
+// Nombres colombianos (se revisan primero)
+const CO_ICON_RULES = [
+  [/pasta dental|crema dental/, '🪥'], [/aguacate/, '🥑'], [/mazorca/, '🌽'], [/frijol/, '🫘'], [/panela|arequipe/, '🍯'],
+  [/banano|harton|platano maduro/, '🍌'], [/yuca|arracacha/, '🍠'], [/mango/, '🥭'], [/guayaba/, '🍏'], [/maracuya/, '🍋'],
+  [/lulo|tangelo/, '🍊'], [/\bmora\b/, '🫐'], [/bocadillo/, '🟥'], [/kumis/, '🥛'], [/salchichon|morcilla/, '🌭'],
+  [/sobrebarriga|anca|de res/, '🥩'], [/pernil|muslo|\balas\b/, '🍗'], [/bon bon bum|barrilete/, '🍭'],
+  [/chocolatina|nucita/, '🍫'], [/chocoramo|gansito/, '🍰'], [/detodito|choclitos/, '🌽'], [/papas margarita/, '🍟'],
+  [/frunas|trululu/, '🍬'], [/supercoco/, '🥥'], [/malta|postobon|colombiana|coca-cola/, '🥤'], [/speed max/, '⚡'],
+  [/limpido|clorox/, '🧴'], [/aromatica/, '🍵'], [/\bcolor\b/, '🌿'], [/areparina|harina/, '🌾'], [/pasta /, '🍝'],
+  [/toallas higienicas/, '🌸'], [/pan tajado/, '🍞']
+];
 function iconFor(p) {
   if (p.emoji) return p.emoji;
   const n = norm(p.name);
+  for (const [re, ic] of CO_ICON_RULES) if (re.test(n)) return ic;
   for (const [re, ic] of ICON_RULES) if (re.test(n)) return ic;
   return CATEGORY_ICON[norm(p.category)] || '🛒';
 }
@@ -97,13 +109,23 @@ function zoneOf(cat) {
 
 // Forma física del envase
 const SHAPE_RULES = [
+  // productos colombianos
+  [/huevo aa \(unidad\)|panela|bocadillo|bon bon bum|barrilete|chocolatina|chocoramo|gansito|supercoco|nucita|jabon rey|bonbril|aromatica|\bcolor\b|comino|frunas/, 'small'],
+  [/huevos .*x(30|12)/, 'eggs'],
+  [/speed max|coca-cola lata/, 'can'],
+  [/papas margarita|detodito|choclitos|trululu|la especial/, 'bagSmall'],
+  [/avena alpina/, 'cup'],
+  [/chocolate corona|chocolate luker|chocolate/, 'box'],
+  [/coca-cola|postobon|colombiana|pony malta|cristal|brisa|jugo hit|limpido|clorox|fabuloso|kumis|yogurt? .*1 l/, 'bottle'],
+  [/cafe sello rojo|cafe aguila roja|pasta |areparina|harina|pan tajado|frijol|detergente fab|salchich|hamburguesas|nuggets/, 'bag'],
+  [/arequipe|axion|mantequilla/, 'jar'],
   [/jugo en polvo|galleta/, 'box'],
   [/bebida en lata|\blata\b|energetica/, 'can'],
   [/atun|jurel|sardina|leche condensada/, 'canFlat'],
   [/papas? fritas|snack|gomita|\bmani\b|marshmallow|caramelo/, 'bagSmall'],
   [/laminad|queso|jamon/, 'tray'],
   [/nectar|leche|crema/, 'carton'],
-  [/bebida|cola|\bagua\b|aceite|vinagre|jugo|cloro|shampoo|liquido|lavaloza|suavizante|limpiador|cerveza|vino|yogur 1 l/, 'bottle'],
+  [/bebida|\bcola\b|\bagua\b|aceite|vinagre|jugo|cloro|shampoo|liquido|lavaloza|suavizante|limpiador|cerveza|vino|yogur 1 l/, 'bottle'],
   [/yogur|quesillo/, 'cup'],
   [/mayonesa|ketchup|manjar|mermelada|cafe|mantequilla|margarina|miel/, 'jar'],
   [/papel higienico|toalla|panal|bolsas de basura/, 'pack'],
@@ -215,17 +237,34 @@ function packageTexture(p, wrap) {
     ctx.fillRect(0, 18, W, 8);
     ctx.fillRect(0, H - 30, W, 6);
     const lx = wrap ? 136 : 18, lw = wrap ? 240 : 220;
+    const hasBrand = !!p.brand;
+    // Marca bien grande arriba, como en el empaque real
+    if (hasBrand) {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      let fs = 44;
+      ctx.font = `700 ${fs}px ${TITLE_FONT}`;
+      while (ctx.measureText(p.brand).width > lw + 16 && fs > 18) { fs -= 2; ctx.font = `700 ${fs}px ${TITLE_FONT}`; }
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = shade(base, -0.45);
+      ctx.strokeText(p.brand, lx + lw / 2, 34);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(p.brand, lx + lw / 2, 34);
+    }
+    const ly = hasBrand ? 62 : 40, lh = hasBrand ? 124 : 140;
     ctx.fillStyle = '#fffaf2';
-    roundRect(ctx, lx, 40, lw, 140, 22);
+    roundRect(ctx, lx, ly, lw, lh, 22);
     ctx.fill();
-    if (img) drawContain(ctx, img, lx + 8, 46, lw - 16, 128);
-    else drawEmoji(ctx, iconFor(p), lx + lw / 2, 112, 96);
+    if (img) drawContain(ctx, img, lx + 8, ly + 6, lw - 16, lh - 12);
+    else drawEmoji(ctx, iconFor(p), lx + lw / 2, ly + lh / 2, hasBrand ? 84 : 96);
     ctx.fillStyle = '#ffffff';
     ctx.font = `700 21px ${TITLE_FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    const lines = wrapLines(ctx, p.name, lw + 10, 2);
-    lines.forEach((l, i) => ctx.fillText(l, lx + lw / 2, 205 + i * 22 - (lines.length - 1) * 4));
+    // sin repetir la marca en el nombre (ej. "Arroz Roa 1 kg" → "Arroz 1 kg")
+    const shortName = hasBrand ? p.name.replace(new RegExp('\\s*' + p.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'i'), ' ').trim() || p.name : p.name;
+    const lines = wrapLines(ctx, shortName, lw + 10, 2);
+    lines.forEach((l, i) => ctx.fillText(l, lx + lw / 2, 210 + i * 22 - (lines.length - 1) * 6));
   };
   draw(null);
   const t = toTex(c);
@@ -1201,7 +1240,7 @@ function openProduct(id) {
   const max = maxOf(p) - inCart;
   sheetQty = p.unit === 'kg' ? Math.min(0.5, Math.max(0.25, max)) : 1;
   $('#psImage').innerHTML = imageHtml(p);
-  $('#psCat').textContent = catIcon(p.category) + ' ' + p.category;
+  $('#psCat').textContent = catIcon(p.category) + ' ' + p.category + (p.brand ? ' · ' + p.brand : '');
   $('#psName').textContent = p.name;
   $('#psPrice').textContent = money(p.price) + (p.unit === 'kg' ? ' / kg' : '');
   const st = $('#psStock');
@@ -1355,7 +1394,7 @@ $('#search').addEventListener('input', () => {
   const q = norm($('#search').value.trim());
   const ul = $('#searchResults');
   if (!q) { ul.classList.add('hidden'); return; }
-  results = [...P.values()].filter(p => norm(p.name).includes(q) || norm(p.category).includes(q)).slice(0, 8);
+  results = [...P.values()].filter(p => norm(p.name).includes(q) || norm(p.category).includes(q) || norm(p.brand).includes(q)).slice(0, 8);
   resSel = 0;
   ul.innerHTML = results.map((p, i) => `<li data-i="${i}" class="${i ? '' : 'sel'}"><span class="em">${iconFor(p)}</span>${esc(p.name)}<span class="pr">${p.stock > 0 ? money(p.price) : 'Agotado'}</span></li>`).join('')
     || '<li class="muted">No encontramos ese producto</li>';
